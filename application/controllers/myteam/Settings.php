@@ -5,7 +5,6 @@ class Settings extends MY_User_Controller{
     {
         parent::__construct();
         $this->load->model('myteam/myteam_settings_model');
-        $this->load->library('flexi_auth', FALSE, 'flexi_auth_full');
         $this->bc['My Team'] = "";
         $this->bc['Settings'] = "";
     }
@@ -22,42 +21,54 @@ class Settings extends MY_User_Controller{
 
     function ajax_change_password()
     {
+        $this->load->model('ion_auth_model');
         $identity="none";
         $curpass = $this->input->post('curpass');
         $newpass = $this->input->post('newpass');
         $identity = $this->myteam_settings_model->get_owner_identity();
-        echo $this->flexi_auth_full->change_password($identity, $curpass, $newpass);
+        echo $this->ion_auth_model->change_password($identity, $curpass, $newpass);
 
     }
 
     function ajax_change_item()
     {
-        $type = $this->input->post('type');
+        $type = $this->input->post('id');
         $value = $this->input->post('value');
         $response = array("success" => false, "msg" =>'');
-        if($type == "teamname")
+        if($type == "#teamname")
         {
             $response['msg'] = $this->myteam_settings_model->change_team_name($value);
+            $response['value'] = $value;
             $response['success'] = true;
         }
-        if($type == 'phone')
+        if($type == "#abbreviation")
+        {
+            $response['msg'] = $this->myteam_settings_model->change_team_abbreviation($value);
+            $response['value'] = $value;
+            $response['success'] = true;
+        }
+        if($type == '#phone')
         {
             $response['msg'] = $this->myteam_settings_model->change_owner_phone($value);
+            $response['value'] = $value;
             $response['success'] = true;
         }
-        if($type == 'email')
+        if($type == '#email')
         {
             $response['msg'] = $this->myteam_settings_model->change_owner_email($value);
+            $response['value'] = $value;
             $response['success'] = true;
         }
-        if($type == 'last')
+        if($type == '#last')
         {
             $response['msg'] = $this->myteam_settings_model->change_owner_lastname($value);
+            $response['value'] = $value;
             $response['success'] = true;
         }
-        if($type == 'first')
+        if($type == '#first')
         {
             $response['msg'] = $this->myteam_settings_model->change_owner_firstname($value);
+            $response['value'] = $value;
             $response['success'] = true;
         }
 
@@ -92,16 +103,17 @@ class Settings extends MY_User_Controller{
             $this->myteam_settings_model->set_current_league($leagueid);
             $this->load->model('security_model');
             $this->security_model->set_session_variables();
+
         }
     }
 
     function ajax_toggle_item()
     {
-        $item = $this->input->post('item');
+        $item = $this->input->post('id');
         $response = array('success' => False);
-        if ($item == "chat_balloon")
+        if ($item == "#chat_balloon")
         {
-            $response['currentValue'] = $this->myteam_settings_model->toggle_chat_balloon();
+            $response['value'] = $this->myteam_settings_model->toggle_chat_balloon();
             $response['success'] = True;
             $this->load->model('security_model');
             $this->security_model->set_owner_session_variables();

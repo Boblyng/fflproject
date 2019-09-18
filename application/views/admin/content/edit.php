@@ -1,32 +1,32 @@
 <?php //print_r($content);?>
 
 
-<div class="row">
-    <div class="columns">
-        <?php if($content->text_id == "news"):?>
-            <input id="title" type="text" value="<?=$content->title?>">
-        <?php else:?>
-            <h5><?=$content->title?></h5>
-        <?php endif;?>
+<div class="section">
+    <?php if($content->text_id == "news"):?>
+        <input class="input" id="title" type="text" value="<?=$content->title?>">
+    <?php else:?>
+        <div class="is-size-5"><?=$content->title?></div>
+    <?php endif;?>
+
+    <div id="content">
     </div>
+
+    <br>
+
+    <button id="submit" class="button is-small is-link">Save</button>
+    <button id="cancel" class="button is-small is-link">Cancel</button>
 </div>
-<div class="row">
-    <div class="columns">
-        <div id="content">
-        </div>
-    </div>
-</div>
-<br>
-<div class="row">
-    <div class="columns">
-        <button id="submit" class="button small">Save</button>
-        <button id="cancel" class="button small">Cancel</button>
-    </div>
-</div>
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 <script src="<?=site_url('js/tinymce/tinymce.min.js')?>"></script>
+<!-- <script src="//cdn.quilljs.com/1.3.6/quill.min.js"></script> -->
 <script>
 
 $(document).ready(function(){
+// Tried Quill, not worth the time to switch
+// var quill = new Quill('#content', {
+//   modules: { toolbar: true },
+//   theme: 'snow'
+// });
 
     tinymce.init({
         mode: 'textareas',
@@ -34,8 +34,9 @@ $(document).ready(function(){
         plugins: 'table colorpicker',
         table_styles: 'Default=table',
         init_instance_callback: "loadcontent",
-        content_css: "<?=site_url('css/foundation.min.css')?>",
+        content_css: "<?=site_url('css/bulma.min.css')?>",
         height: "280"});
+
 })
 
 $("#submit").on('click',function(){

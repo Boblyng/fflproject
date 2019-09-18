@@ -63,15 +63,16 @@ class Messages_model extends MY_Model{
 
     function email_new_message($to, $subject, $body)
     {
-        $recipient = $this->db->select('uacc_email')->from('team')->join('owner','owner.id = team.owner_id')
-            ->join('user_accounts','user_accounts.uacc_id = owner.user_accounts_id')
-            ->where('team.id',$to)->get()->row()->uacc_email;
+        $recipient = $this->db->select('email')->from('team')->join('owner','owner.id = team.owner_id')
+            ->join('user_accounts','user_accounts.id = owner.user_accounts_id')
+            ->where('team.id',$to)->get()->row()->email;
 
         $this->config->load('fflproject');
         $this->load->library('email');
         $this->email->from($this->config->item('fflp_email_reply_to'), $this->config->item('fflp_email_site_title'));
         $this->email->to($recipient);
         $this->email->subject($subject);
+        $body = prepare_email_body($body);
         $this->email->message($body);
         $this->email->send();
     }
@@ -104,10 +105,10 @@ class Messages_model extends MY_Model{
         $this->db->where('id',$id)->update('message', array('folder_id' => 2));
     }
 
-    function delete_message($id)
+    function delete_message($id,$forever=false)
     {
         $message = $this->db->select('folder_id')->from('message')->where('id',$id)->get()->row();
-        if ($message->folder_id == 2)
+        if ($message->folder_id == 2 || $forever)
         {
             $this->db->delete('message', array('id' => $id));
             return "Message deleted forever.";

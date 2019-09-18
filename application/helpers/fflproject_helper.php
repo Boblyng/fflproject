@@ -33,6 +33,20 @@ function t_mysql($unixtimestamp = null)
     return date("Y-m-d H:i:s", $unixtimestamp);
 }
 
+function form_require($vals)
+{
+    foreach($vals as $v)
+    {
+        if($v == NULL || $v == "")
+            return False;
+    }
+    return True;
+}
+
+function get(&$var, $default=null) {
+    return isset($var) ? $var : $default;
+}
+
 // // Ended up not using this, but leaving it commented out just in case.
 // function gmail_send($to,$subject,$body)
 // {
@@ -62,9 +76,9 @@ function t_mysql($unixtimestamp = null)
 //     }
 // }
 
-function sse_json($var)
+function prepare_email_body($in_body)
 {
-    echo "data: ".json_encode($var)."\n\n";
+    return str_replace("\n","<br>",$in_body);
 }
 
 function debug($var,$debug)

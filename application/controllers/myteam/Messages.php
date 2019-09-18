@@ -17,6 +17,11 @@ class Messages extends MY_User_Controller{
     	$this->user_view('user/myteam/messages',$data);
     }
 
+    function test()
+    {
+        print_r($this->messages_model->get_messages_from_folder(1));
+    }
+
     function compose($action="",$id="")
     {
         $data = array();
@@ -50,15 +55,18 @@ class Messages extends MY_User_Controller{
         $data['message'] = $this->messages_model->get_message($id);
 
         $this->load->model('security_model');
-        $this->security_model->set_user_messages();
+        $this->security_model->set_user_notifications();
 
         $this->load->view('user/myteam/messages/ajax_display_message',$data);
     }
 
     function delete_message()
     {
+        $forever = false;
+        if ($this->input->post('forever') == true)
+            $forever = true;
         $response = array('success' => false, 'msg' => '');
-        $response['msg'] = $this->messages_model->delete_message($this->input->post('id'));
+        $response['msg'] = $this->messages_model->delete_message($this->input->post('id'),$forever);
         $response['success'] = true;
         //$this->messages_model->delete_message(9);
 

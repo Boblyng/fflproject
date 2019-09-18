@@ -1,7 +1,12 @@
-<div class="row">
-    <div class="columns text-center">
-        <?php $this->load->view('user/league/history/year_bar.php', array('section' => 'postseason'));?>
-        <h4><?=$selected_year?> Post Season</h4>
-        <?php $this->load->view('user/season/postseason') ?>
-    </div>
+<div class="section">
+        <div class="container">
+
+                <?php $this->load->view('user/league/history/year_bar.php', array('section' => 'postseason'));?>
+                <div class="title"><?=$selected_year?> Post Season</div>
+                <div class="f-scrollbar">
+                        <div class="content">
+                        <?php $this->load->view('user/season/postseason') ?>
+                        </div>
+                </div>
+        </div>
 </div>

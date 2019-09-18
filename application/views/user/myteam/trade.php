@@ -1,47 +1,43 @@
-<?php //print_r($open_trades); ?>
-<?php $this->load->view('template/modals/stat_popup'); ?>
+<?php //$this->load->view('components/stat_popup'); ?>
 
-<div class="row callout">
-	<div class="column">
-		<h5>Trades</h5>
-	</div>
-	<?php if(!$this->session->userdata('offseason')): ?>
-		<div class="column small-12"><a href="<?=site_url('myteam/trade/propose')?>">Propose a Trade</a></div>
-	<?php endif;?>
-	<div class="column small-12"><a href="<?=site_url('myteam/trade/log')?>">Trade log</a></div>
-</div>
+<div class="section">
+	<div class="container">
+		<div class="title">Trades</div>
+		<br>
+		<div class="has-text-left">
 
-<!--
-<table class="table"><tbody><tr><td>
-<div class="text-center"><h4>No Current Offers</h4></div>
-</td></tr></tbody></table>
--->
+			<?php if(!$this->session->userdata('offseason')): ?>
+				<span><a href="<?=site_url('myteam/trade/propose')?>">Propose a Trade</a></span> |
+			<?php endif;?>
+			<span><a href="<?=site_url('myteam/trade/log')?>">Trade log</a></span>
 
-<?php if($this->session->userdata('offseason')): ?>
-	<?php $this->load->view('user/offseason'); ?>
-<?php else:?>
-<div class="row callout">
-	<div class="columns">
-		<div class="row">
-			<div class="column text-center">
-				<h5>Outstanding Trades</h5>
-			</div>
 		</div>
-		<div class="row">
-			<div class="column">
-				<table class="table table-striped">
+
+
+		<!--
+		<table class="table"><tbody><tr><td>
+		<div class="text-center"><h4>No Current Offers</h4></div>
+		</td></tr></tbody></table>
+		-->
+
+		<?php if($this->session->userdata('offseason')): ?>
+			<?php $this->load->view('user/offseason'); ?>
+		<?php else:?>
+			<br>
+			<div class="title is-size-5">Outstanding Trades</div>
+
+			<div class="f-scrollbar">
+				<table class="table is-fullwidth is-striped is-size-7-mobile f-min-width-medium">
 					<thead>
 						<th>Offer</th><th>Request</th><th>Expires</th><th>Status</th>
 					</thead>
 					<tbody id="open-trades-tbody">
-				</tbody>
+					</tbody>
 				</table>
 			</div>
-		</div>
+		<?php endif; ?>
 	</div>
 </div>
-<?php endif; ?>
-
 
 
 <script>

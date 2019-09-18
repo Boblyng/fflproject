@@ -1,6 +1,6 @@
-<div class="row">
-    <div class="columns callout">
-        <table>
+<div class="section">
+    <div class="container">
+        <table class="table is-fullwidth is-narrow is-striped">
             <thead>
                 <th>Position</th>
                 <th>NFL Pos.</th>
