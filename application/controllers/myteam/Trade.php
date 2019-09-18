@@ -73,6 +73,12 @@ class Trade extends MY_User_Controller{
 
     }
 
+    function ajax_get_my_roster()
+    {
+        $data['roster'] = $this->trade_model->get_roster_data();
+        $this->load->view('user/myteam/trade/ajax_get_my_roster',$data);
+    }
+
     function submit_trade_offer()
     {
         $team1_id = $this->teamid;
@@ -255,15 +261,15 @@ class Trade extends MY_User_Controller{
                     <td>
                     <?php if ($type == 'offer'): ?>
 
-                        <button class="button accept-button small" value="<?=$trade_id?>">
+                        <button class="button accept-button is-small is-link" value="<?=$trade_id?>">
                             Accept
                         </button>
-                        <button class="button decline-button small" value="<?=$trade_id?>">
+                        <button class="button decline-button is-small is-link" value="<?=$trade_id?>">
                             Decline
                         </button>
 
                     <?php else: ?>
-                        <div><button class="button decline-button small" value="<?=$trade_id?>">Remove Offer</button></div>
+                        <div><button class="button decline-button is-small is-link" value="<?=$trade_id?>">Remove Offer</button></div>
                     <?php endif; ?>
                     </td>
                 </tr>
@@ -296,17 +302,22 @@ class Trade extends MY_User_Controller{
 
         ?>
 
-        <?php foreach ($picks as $p): ?>
-        <tr>
-            <td><?=$p->round?></td>
-            <td><?php if($p->pick == 0){echo "-";}else{echo $p->pick;} ?></td>
-            <td>
-                <button id="btn-<?=$year?>-<?=$p->round?>" class="button pick-btn small"
-                    data-id="<?=$p->id?>" data-year="<?=$year?>" data-round="<?=$p->round?>" data-pick="<?=$p->pick?>"
-                    <?php if($future){echo 'data-future="true"';}else{echo 'data-future="false"';}?>>Select</button>
-            </td>
-        </tr>
-        <?php endforeach; ?>
+        <?php if(count($picks) == 0): ?>
+            <tr><td colspan=3>No future picks to trade</td></tr>
+        <?php else: ?>
+
+            <?php foreach ($picks as $p): ?>
+            <tr>
+                <td><?=$p->round?></td>
+                <td><?php if($p->pick == 0){echo "-";}else{echo $p->pick;} ?></td>
+                <td>
+                    <button id="btn-<?=$year?>-<?=$p->round?>" class="button pick-btn is-small"
+                        data-id="<?=$p->id?>" data-year="<?=$year?>" data-round="<?=$p->round?>" data-pick="<?=$p->pick?>"
+                        <?php if($future){echo 'data-future="true"';}else{echo 'data-future="false"';}?>>Select</button>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        <?php endif;?>
 
         <?php
     }
@@ -318,16 +329,15 @@ class Trade extends MY_User_Controller{
         $pick_years = $this->trade_model->get_future_pick_years_array();
 
         ?>
-
-        <?php foreach($pick_years as $p): ?>
-            <option value="<?=$p?>" <?php if($p == $pick_year){echo "selected";}?>><?=$p?></option>
-        <?php endforeach;?>
-
+        <?php if (count($pick_years) == 0): ?>
+            <option value="">N/A</option>
+        <?php else: ?>
+            <?php foreach($pick_years as $p): ?>
+                <option value="<?=$p?>" <?php if($p == $pick_year){echo "selected";}?>><?=$p?></option>
+            <?php endforeach;?>
+        <?php endif;?>  
         <?php
     }
 
-    function test()
-    {
-        $this->trade_model->trade_position_over_limit(27);
-    }
+
 }

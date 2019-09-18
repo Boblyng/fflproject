@@ -22,21 +22,44 @@ class Transactions extends MY_Admin_Controller{
     function ajax_save_setting()
     {
         $response = array('success' => False);
-        $type = $this->input->post('type');
+        $id = $this->input->post('id');
         $value = $this->input->post('value');
-        if ($type == 'wwcleartime')
+
+        if ($id == '#wwcleartime')
             $value = $value*60*60;
-        if ($type == 'wwdays' && !$this->leaguesettings_model->wwdays_is_valid($value))
+        // if ($id == '#wwdays' && !$this->leaguesettings_model->wwdays_is_valid($value))
+        // {
+        //     $response['success'] = False;
+        //     echo json_encode($response);
+        //     return;
+        // }
+
+        $this->leaguesettings_model->change_setting(0,$id,$value);
+        $response['value'] = $value;
+        if ($id == '#wwcleartime')
+            $response['value'] = $value/60/60;
+
+        $response['success'] = True;
+        echo json_encode($response);
+    }
+
+    function ajax_toggle_wwday()
+    {   
+        $response = array('success' => False);
+        // This will be 0,1,2,3,4,5,6
+        $day = $this->input->post('var1');
+        if (!in_array($day,array('0','1','2','3','4','5','6')))
         {
             $response['success'] = False;
             echo json_encode($response);
             return;
         }
 
-        $this->leaguesettings_model->change_setting(0,$type,$value);
-
+        $response['value'] = $this->transactions_model->toggle_wwday($day);
         $response['success'] = True;
+
         echo json_encode($response);
+
     }
 
     function ww_approve()
@@ -60,8 +83,8 @@ class Transactions extends MY_Admin_Controller{
     {
         $response = array('success' => false);
         $value = $this->input->post('value');
-        $response['value'] = $value;
         $this->transactions_model->set_ww_approval_setting($value);
+        $response['value'] = $value;
         $response['success'] = True;
         echo json_encode($response);
     }

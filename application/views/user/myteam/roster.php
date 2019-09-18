@@ -1,54 +1,72 @@
 
-<?php $this->load->view('template/modals/stat_popup');?>
+<?php $this->load->view('components/stat_popup');?>
 
 <?php if($keepers_num > 0):?>
-    <div class="reveal small" id="set-keepers-modal" data-reveal data-overlay="true">
-        <h5>Keepers</h5>
-        <table>
-            <thead>
-            </thead>
-            <tbody id="keepers-table">
-            </tbody>
-        </table>
-    	<button class="close-button" data-close aria-label="Close modal" type="button">
-    	  <span aria-hidden="true">&times;</span>
-    	</button>
-    </div>
+    <?php 
+
+        $body = '<div class="is-size5">Keepers</div>
+                <table class="table is-fullwidth">
+                    <thead>
+                    </thead>
+                    <tbody id="keepers-table">
+                    </tbody>
+                </table>';
+
+    // Keepers modal
+
+        $this->load->view('components/modal', array('id' => 'set-keepers-modal',
+                                                            'title' => 'Keepers',
+                                                            'body' => $body,
+                                                            'reload_on_close' => True));
+    ?>
+
 <?php endif;?>
 
-<div class="row callout">
-    <div class="columns medium-3 text-center small-12">
-        <div><h4><?=$teamname?></h4></div>
-        <?php if ($info->logo): ?>
-            <div><img src="<?=$logo_thumb_url?>"></div>
-        <?php endif; ?>
-        <div class="mt-r-teamstats-style">
-            <div>Record: <?=$record->wins?>-<?=$record->losses?>-<?=$record->ties?></div>
-            <div>Win Pct: <?=str_replace('0.0','.0',number_format($record->winpct,3))?></div>
-            <div>Points: <?=$record->points?></div>
-            <div>Week <?=$this->session->userdata('current_week')?></div>
+
+<div class="hero is-link is-bold is-small">
+    <div class="hero-body">
+        <div class="columns is-centered">
+
+            <div class="column is-narrow is-2">
+                <div><h2 class="title"><?=$teamname?></h2></div>
+
+                <div class="subtitle">
+                    <div>Record: <?=$record->wins?>-<?=$record->losses?>-<?=$record->ties?></div>
+                    <div>Win Pct: <?=str_replace('0.0','.0',number_format($record->winpct,3))?></div>
+                    <div>Points: <?=$record->points?></div>
+                    <div>Week <?=$this->session->userdata('current_week')?></div>
+                </div>
+            </div>
+            <div class="column is-narrow is-3">
+                <?php if ($info->logo): ?>
+                <figure class="image is-128x128">
+                    <img src="<?=$logo_thumb_url?>">
+                </figure>
+                <?php endif; ?>
+            </div>
         </div>
-        <hr class="show-for-small-only">
     </div>
-    <div class="columns medium-9 mt-r-schedule-style small-12">
-        <?php
-              $cols = array();
-              if (count($schedule) > 7){
-              $cols[] = array_slice($schedule, 0, count($schedule) / 2);
-              $cols[] = array_slice($schedule, count($schedule) / 2);
-            }else{$cols[] = $schedule;}
-        ?>
-        <?php if (count($schedule) != 0): ?>
-            <h5 class="text-center">Schedule</h5>
-        <?php endif; ?>
-        <div class="row align-center">
-            <?php foreach ($cols as $col):?>
-            <?php if (count($col) == 0){continue;} ?>
-            <?php if (count($cols) == 1){$medcols=12;}else{$medcols=6;} ?>
-                <div class="columns small-12 medium-<?=$medcols?>">
-                <table>
+</div>
+
+<div class="section">
+
+    <div class="tabs is-small is-boxed fflp-tabs-active">
+        <ul>
+            <li class="is-active" data-for="myteam-roster-tab"><a>Roster/Starting Lineup</a></li>
+            <li class="" data-for="myteam-schedule-tab"><a>Schedule</a></li>
+        </ul>
+    </div>
+
+    <div id="myteam-schedule-tab" class="is-hidden">
+        <div class="container">
+            <?php
+                $col = $schedule;
+            ?>
+            <div class="title">Schedule</div>
+            <div class="f-scrollbar">
+                <table class="table table-border is-fullwidth is-hoverable fflp-table-mobile">
                 <thead>
-                    <th>Week</th>
+                    <th class="has-text-centered">Week</th>
                     <th>Opponent</th>
                     <th>Result</th>
                 </thead>
@@ -60,7 +78,7 @@
                             <tr>
                         <?php endif;?>
 
-                        <td><?=$s->week?></td>
+                        <td class="has-text-centered"><?=$s->week?></td>
                         <?php if($s->home_id != $this->session->userdata('team_id')): ?>
                             <td><a href="<?=site_url('league/teams/view/'.$s->home_id)?>">@<?=$s->home_name?></a></td>
                             <?php if($s->away_win == '1'):?>
@@ -85,23 +103,22 @@
                 <?php endforeach; ?>
                 </tbody>
                 </table>
-                </div>
-            <?php endforeach;?>
+            </div>
         </div>
     </div>
-</div>
 
-<?php if($this->session->userdata('offseason')): ?>
-    <?php $this->load->view('user/offseason');?>
-<?php else: ?>
-<div class="row">
-    <div class="columns callout">
-        <div class="row">
-            <div class="columns medium-2">
-                <?php if ($keepers_num > 0): ?>
-                    <a id="set-keepers" href="#"> Edit Keepers</a>
+    <?php if($this->session->userdata('offseason')): ?>
+        <?php $this->load->view('user/offseason');?>
+    <?php else: ?>
 
-                <?php endif;?>
+    <div id="myteam-roster-tab">
+        <div class="container">
+            <?php if ($keepers_num > 0): ?>
+                <a id="set-keepers" href="#">Edit Keepers</a><br>
+
+            <?php endif;?>
+            <div class="select">
+
                 <select id="selected-week">
                     <?php foreach($weeks as $w): ?>
                         <?php if($w->week == $this->session->userdata('current_week')): ?>
@@ -111,43 +128,39 @@
                         <?php endif;?>
                     <?php endforeach; ?>
                 </select>
+            </div>
 
+            <br><br>
+            
+            <div class="columns is-multiline">
+                <div class="column">
+                    <div class="title is-size-4">Starting Lineup</div>
+                    <div class="f-scrollbar">
+                        <table class="table is-fullwidth is-narrow table-border is-size-7-mobile is-hoverable">
+                            <thead>
+                                <th class="has-text-centered">Pos</th><th>Player</th><th>Opponent</th><th class="has-text-centered">Bye</th><th class="is-hidden-mobile">Points</th><th class="has-text-centered">Sit</th>
+                            </thead>
+                            <tbody id ="starter-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="title is-size-4">Bench</div>
+                    <div class="f-scrollbar">
+                        <table class="table is-fullwidth is-narrow table-border is-size-7-mobile is-hoverable">
+                            <thead>
+                                <th>Player</th><th>Opponent</th><th class="has-text-centered">Bye</th><th class="has-text-centered">Points</th><th class="has-text-centered">Start as</th>
+                            </thead>
+                            <tbody id="bench-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-        </div>
-        <!--
-        <div class="row text-center">
-            <div class="checkbox">
-              <label>
-                <input id="future-weeks" type="checkbox"> Set Future Weeks
-              </label>
-            </div>
-        </div>
-        -->
-        <div class="row">
-            <div class="large-6 columns small-12">
-                <div><h5>Starting Lineup</h5></div>
-                <table>
-                    <thead>
-                        <th>Pos</th><th>Player</th><th>Opponent</th><th>Bye</th><th class="text-center hide-for-extra-small">Points</th><th class="text-center">Sit</th>
-                    </thead>
-                    <tbody id ="starter-tbody">
-                    </tbody>
-                </table>
-            </div>
-            <div class="large-6 columns small-12">
-                <div><h5>Bench</h5></div>
-                <table>
-                    <thead>
-                        <th>Player</th><th>Opponent</th><th>Bye</th><th class="text-center hide-for-extra-small">Points</th><th class="text-center">Start as</th>
-                    </thead>
-                    <tbody id="bench-tbody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
+         </div>   
     </div>
 </div>
-
 <?php endif; ?>
 
 <script>
@@ -158,7 +171,6 @@ $(document).ready(function(){
         var week = $("#selected-week").val();
         url = "<?=site_url('myteam/roster/start')?>";
         $.post(url,{'player_id' : $(this).val(),'week' : week, 'pos_id':0}, function(data){
-            console.log(data);
             loadTables();
         });
     });
@@ -168,7 +180,6 @@ $(document).ready(function(){
         url = "<?=site_url('myteam/roster/start')?>";
         var data = $(this).val().split("_")
         $.post(url,{'player_id' : data[0], 'pos_id' : data[1], 'week':week},function(data){
-            console.log(data);
             loadTables();
         });
     });
@@ -198,31 +209,35 @@ $(document).ready(function(){
             var url = "<?=site_url('myteam/roster/ajax_keeper_table')?>";
             $.post(url,{},function(data){
                 $("#keepers-table").html(data);
-                keeper_max_check();
+                //keeper_max_check();
             });
-            $("#set-keepers-modal").foundation('open');
+            $("#set-keepers-modal").addClass('is-active');
         });
 
-        $("#keepers-table").on('click','.keeper-toggle',function(){
-            var id = $(this).attr('id').replace('keeper-','');
-            var url = "<?=site_url('myteam/roster/toggle_keeper')?>";
-            $.post(url,{'id':id},function(){
+        // $('.modal-close, .modal-close-button, .modal-background').on('click', function(){
+        //     $(this).closest($('.modal')).removeClass('is-active');
+        // });
 
-            });
-            keeper_max_check();
-        });
+        // $("#keepers-table").on('click','.keeper-toggle',function(){
+        //     var id = $(this).attr('id').replace('keeper-','');
+        //     var url = "<?=site_url('myteam/roster/toggle_keeper')?>";
+        //     $.post(url,{'id':id},function(){
 
-        $(document).on("closed.zf.reveal",function(){
-            loadTables();
-        });
+        //     });
+        //     keeper_max_check();
+        // });
 
-        function keeper_max_check()
-        {
-            var len = $(".keeper-toggle:checked").length;
-            if (len >= <?=$keepers_num?>)
-            {$(".keeper-toggle:not(:checked)").attr('disabled',true);}
-            else {$(".keeper-toggle:not(:checked)").attr('disabled',false);}
-        }
+        // // $(document).on("closed.zf.reveal",function(){
+        // //     loadTables();
+        // // });
+
+        // function keeper_max_check()
+        // {
+        //     var len = $(".keeper-toggle:checked").length;
+        //     if (len >= <?=$keepers_num?>)
+        //     {$(".keeper-toggle:not(:checked)").attr('disabled',true);}
+        //     else {$(".keeper-toggle:not(:checked)").attr('disabled',false);}
+        // }
     <?php endif;?>
 
 });

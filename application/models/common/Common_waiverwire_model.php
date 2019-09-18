@@ -108,6 +108,7 @@ class Common_waiverwire_model extends CI_Model{
 
     function admin_ok_to_process_transaction($id, &$ret)
     {
+
         $log = $this->db->select('league_id, pickup_player_id, team_id, drop_player_id')->from('waiver_wire_log')->where('id',$id)
             ->get()->row();
         $leagueid = $log->league_id;
@@ -130,7 +131,9 @@ class Common_waiverwire_model extends CI_Model{
             }
         }
 
-        $week_year = $this->common_noauth_model->get_current_week($leagueid);
+
+
+        $week_year = $this->common_noauth_model->get_current_week_year($leagueid);
 
         // Check position limit, this is a tad complicated
         $pos_year = $this->common_noauth_model->league_position_year($leagueid,$week_year->year);
@@ -214,11 +217,14 @@ class Common_waiverwire_model extends CI_Model{
 
     function pickup_player($player_id, $teamid = 0, $leagueid)
     {
-        $data['league_id'] = $leagueid;
-        $data['team_id'] = $teamid;
-        $data['player_id'] = $player_id;
-        $data['starting_position_id'] = 0;
-        $this->db->insert('roster',$data);
+        $this->common_noauth_model->add_player($player_id, $teamid, $leagueid = 0);
+        // $data['league_id'] = $leagueid;
+        // $data['team_id'] = $teamid;
+        // $data['player_id'] = $player_id;
+        // $data['starting_position_id'] = 0;
+        // $this->db->insert('roster',$data);
+        
+        // Recalculate the bench
     }
 
     function cancel_request($id, $teamid, $week=0)
@@ -236,12 +242,12 @@ class Common_waiverwire_model extends CI_Model{
     function send_email_notice($id, $subject)
     {
 
-        $data = $this->db->select('uacc_email as email_address')->from('waiver_wire_log')
+        $data = $this->db->select('email as email_address')->from('waiver_wire_log')
             ->select('pp.first_name as p_first, pp.last_name as p_last')
             ->select('dp.first_name as d_first, dp.last_name as d_last')
             ->join('team','waiver_wire_log.team_id = team.id')
             ->join('owner','owner.id = team.owner_id')
-            ->join('user_accounts','user_accounts.uacc_id = owner.user_accounts_id')
+            ->join('user_accounts','user_accounts.id = owner.user_accounts_id')
             ->join('player as pp','pp.id = waiver_wire_log.pickup_player_id','left')
             ->join('player as dp','dp.id = waiver_wire_log.drop_player_id','left')
             ->where('waiver_wire_log.id',$id)
@@ -285,8 +291,8 @@ class Common_waiverwire_model extends CI_Model{
 
     function send_admin_approval_notice($leagueid)
     {
-        $admins = $this->db->select('uacc_email as email')->from('league_admin')
-            ->join('user_accounts','uacc_id = league_admin_id')
+        $admins = $this->db->select('email as email')->from('league_admin')
+            ->join('user_accounts','user_accounts.id = league_admin_id')
             ->where('league_admin.league_id',$leagueid)->get()->result();
 
         $league_name = $this->common_noauth_model->get_league_name($leagueid);
@@ -312,7 +318,6 @@ class Common_waiverwire_model extends CI_Model{
 
     function is_player_locked($player_id, $year=0, $week=0, $weektype="", $leagueid=0)
     {
-
         if ($year == 0)
             $year = $this->session->userdata('current_year');
         if ($week == 0)

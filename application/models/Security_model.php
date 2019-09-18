@@ -8,16 +8,14 @@ class Security_model extends CI_Model
     {
         parent::__construct();
 
-        // Initialize flexi auth (lite)
-        $this->auth = new stdClass;
-        $this->load->library('flexi_auth_lite', FALSE, 'flexi_auth');
+        $this->load->library('ion_auth');
 
         $this->load->model('common/common_noauth_model');
 
         $this->site_settings = $this->db->select('name, debug_user, debug_admin, debug_year, debug_week, debug_week_type_id')
             ->select('session_refresh_time, live_element_refresh_time')
             ->from('site_settings')->get()->row();
-        $this->userid = $this->flexi_auth->get_user_id();
+        $this->userid = $this->ion_auth->get_user_id();
         $this->session->set_userdata('user_id',$this->userid);
         if ($this->db->from('owner')->where('user_accounts_id',$this->userid)->count_all_results() > 0)
             $this->is_owner = True;
@@ -36,13 +34,13 @@ class Security_model extends CI_Model
         // Set debug session variable
         if ($this->site_settings->debug_user)
             $this->session->set_userdata('debug',True);
-        elseif($this->site_settings->debug_admin && $this->flexi_auth->is_admin())
+        elseif($this->site_settings->debug_admin && $this->ion_auth->is_admin())
             $this->session->set_userdata('debug',True);
         else
             $this->session->set_userdata('debug',False);
 
         $this->session->set_userdata('site_name', $this->site_settings->name);
-        $this->session->set_userdata('is_site_admin',$this->flexi_auth->is_admin());
+        $this->session->set_userdata('is_site_admin',$this->ion_auth->is_admin());
 
         $this->session->set_userdata('CI_VERSION',CI_VERSION);
     }
@@ -106,7 +104,7 @@ class Security_model extends CI_Model
         $this->session->set_userdata('live_element_refresh_time',$this->site_settings->live_element_refresh_time);
         if($this->session->userdata('is_owner'))
         {
-            $week_year = $this->common_noauth_model->get_current_week($this->session->userdata('league_id'));
+            $week_year = $this->common_noauth_model->get_current_week_year($this->session->userdata('league_id'));
             if ($this->site_settings->debug_week == -1)
                 $this->session->set_userdata('current_week', $week_year->week);
             else
@@ -127,17 +125,18 @@ class Security_model extends CI_Model
             $this->session->set_userdata('live_scores',$this->live_scores_on());
 
             $this->session->set_userdata('draft_in_progress',$this->draft_in_progress());
-            $this->set_user_messages();
+            $this->set_user_notifications();
         }
     }
 
-    function set_user_messages()
+    function set_user_notifications()
     {
 
         $messages = array();
 
         // Check for unread messages, confusing cause I call notices to the user "messages" too.
-        $msgs = $this->db->from('message')->where('team_id',$this->session->userdata('teamid'))->where('read',0)->count_all_results();
+        $msgs = $this->db->from('message')->where('to_team_id',$this->session->userdata('team_id'))
+                    ->where('team_id',$this->session->userdata('team_id'))->where('read',0)->count_all_results();
         if ( $msgs > 0)
         {
             if ($msgs == 1)
@@ -145,7 +144,7 @@ class Security_model extends CI_Model
             else
                 $note = "You have ".$msgs." new messages.";
             $date = $this->db->select('unix_timestamp(max(message_date)) as message_date')->from('message')
-                ->where('team_id',$this->session->userdata('teamid'))->where('read',0)->get()->row()->message_date;
+                ->where('team_id',$this->session->userdata('team_id'))->get()->row()->message_date;
             $messages[] = array('class'=>'primary',
                                 'message'=> $note.
                                             '<br><a href="'.site_url('myteam/messages').'">Go to your Inbox</a>',
@@ -156,7 +155,7 @@ class Security_model extends CI_Model
         {
             $messages[] = array('class' => 'primary',
                                 'message' => '<a href="'.site_url('season/draft/live').'" data-ackurl="'.
-                                site_url('common/message_ack/msg_draft_in_progress').'" class="_message-close">Join the Draft currently in progress.</a>',
+                                site_url('common/notification_ack/msg_draft_in_progress').'" class="_notification-close">Join the Draft currently in progress.</a>',
                                 'id' => 'msg_draft_in_progress');
         }
 
@@ -172,11 +171,11 @@ class Security_model extends CI_Model
                 $note = "You have ".$trades." trades awaiting responses.";
             $messages[] = array('class'=>'primary',
                                 'message'=> $note.
-                                '<br><a href="'.site_url('myteam/trade').'" data-ackurl="'.site_url('common/message_ack/msg_open_trades').'" class="_message-close">View Trades</a>',
+                                '<br><a href="'.site_url('myteam/trade').'" data-ackurl="'.site_url('common/message_ack/msg_open_trades').'" class="_notification-close">View Trades</a>',
                                 'id'=>'msg_open_trades');
         }
 
-        $this->session->set_userdata('user_messages',$messages);
+        $this->session->set_userdata('user_notifications',$messages);
 
     }
 

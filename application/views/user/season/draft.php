@@ -1,38 +1,37 @@
 <?php //print_r($years); ?>
-<div class="row">
-	<div class="columns callout">
-		<div class="row">
-			<h4 class="columns">
-				<a href="<?=site_url('season/draft/live')?>" class="button"><?=$this->session->userdata('current_year')?> Live Draft</a>
-			</h4>
+<div class="section">
+	<div class="container">
+		<div class="title"> Draft Results</div>
+		<?php if ($draft_end != $this->session->userdata('current_year')): ?>
+		<div class="is-size-5">
+			<a href="<?=site_url('season/draft/live')?>"><?=$this->session->userdata('current_year')?> Live Draft</a>
 		</div>
-		<div class="row align-center">
-			<div class="columns small-5 medium-2">
-				<select id="year-select" class="form-control">
-					<?php if(!in_array($this->session->userdata('current_year'),$years)):?>
-					<option value="<?=$this->session->userdata('current_year')?>"><?=$this->session->userdata('current_year')?></option>
-					<?php endif;?>
-					<?php foreach($years as $y): ?>
-						<option value="<?=$y?>"><?=$y?></option>
-					<?php endforeach; ?>
-				</select>
-			</div>
+		<br>
+		<?php endif;?>
+		<div class="select">
+			<select id="year-select" class="form-control">
+				<?php if(!in_array($this->session->userdata('current_year'),$years)):?>
+				<option value="<?=$this->session->userdata('current_year')?>"><?=$this->session->userdata('current_year')?></option>
+				<?php endif;?>
+				<?php foreach($years as $y): ?>
+					<option value="<?=$y?>"><?=$y?></option>
+				<?php endforeach; ?>
+			</select>
 		</div>
 
-		<div class="row">
-			<div class="columns">
-				<table>
-					<thead>
-						<th>Pick</th>
-						<th>Player</th>
-						<th>Pos</th>
-						<th>NFL Team</th>
-						<th>Owner</th>
-					</thead>
-					<tbody id="draft-results-table">
-					</tbody>
-				</table>
-			</div>
+		<br><br>
+		<div class="f-scrollbar">
+			<table class="table is-fullwidth is-narrow is-striped f-table-fixed is-size-7-mobile">
+				<thead>
+					<th>Pick</th>
+					<th>Player</th>
+					<th>Pos</th>
+					<th>NFL Team</th>
+					<th>Owner</th>
+				</thead>
+				<tbody id="draft-results-table">
+				</tbody>
+			</table>
 		</div>
 	</div>
 </div>

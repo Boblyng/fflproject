@@ -19,6 +19,7 @@ import urllib2
 import urllib
 import os
 import json
+import hashlib
 import pprint
 
 try:
@@ -88,6 +89,9 @@ def main():
 
   if(args.backfill_esbids):
     backfill_esbids(year)
+
+  if(args.clear_player_generic_photo is not None):
+      clear_player_photos(args.clear_player_generic_photo)
 
 
 def update_standings(year, week ,weektype):
@@ -232,6 +236,41 @@ def update_team_photos():
 
 
 
+def clear_player_photos(photo_filename):
+    photo_path =  os.path.join(c.BASEDIR,"images/players/"+photo_filename)
+    try:
+        md5_to_match = hashlib.md5(open(photo_path,'rb').read()).hexdigest()
+    except IOError:
+        sys.exit('File not found: '+photo_path)
+        
+        
+    count = 0
+    print "Scanning photos...\n"
+    for p_filename in os.listdir(os.path.join(c.BASEDIR,"images/players/")):
+        p_path = os.path.join(c.BASEDIR,"images/players/"+p_filename)
+        p_md5 = hashlib.md5(open(p_path,'rb').read()).hexdigest()
+        if p_md5 == md5_to_match:
+            
+            query = 'update player set photo = "" where photo = "players/'+p_filename+'"'
+            cur.execute(query)
+            
+            if cur.rowcount > 0:
+                count += cur.rowcount
+            db.commit()
+            os.remove(p_path)
+
+            print p_filename+" matched file hash and was cleared."
+    print
+    if count > 0:
+        print "Player photos cleared: "+str(count)
+        print "\nRun 'update.py -players -photos' to re-scan for new player photos"
+    else:
+        print "No player photos matched "
+    print
+
+
+
+
 def update_players(year, week, weektype):
     # Helper functions for update_players
     def get_team_dict():
@@ -322,8 +361,8 @@ def update_players(year, week, weektype):
 
             add_count = add_count + 1
             query = ("insert into player (player_id,nfl_position_id,nfl_team_id,first_name,last_name,birthdate,college,"+
-            "short_name,height,weight,years_pro,number,profile_id,profile_url,status, active,photo) "+
-            "values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %
+            "short_name,height,weight,years_pro,number,profile_id,profile_url,status, active,photo, last_seen) "+
+            "values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',now())" %
             			(player_id,
             			pos,
             			team,
@@ -370,14 +409,31 @@ def update_players(year, week, weektype):
             ", short_name = '"+short_name+"'"+
             ", status = '"+status+"'"+
             ", photo = '"+photo+"'"+
+            ", last_seen = now()"+
             " where player_id = '" + str(gsis_id)+"'")
         cur.execute(query)
 	db.commit()
-    db.commit()
+
     print "Added: " + str(add_count) + " players."
     print "Updated: " + str(update_count) + " players."
 
     update_esbids(year,week)
+
+    # Adding this temporarily to correct team positions that got marked inactive
+    query = ('UPDATE player JOIN nfl_position ON nfl_position.id = player.nfl_position_id SET player.active = 1 '
+            +'WHERE nfl_position.type = 3 or nfl_position.type = 4')
+    
+    cur.execute(query)
+
+    # This one stays, sets all non-team players inactive if they have last_seen older than 30 days ago
+    query = ('UPDATE player JOIN nfl_position ON nfl_position.id = player.nfl_position_id SET player.active = 0 '
+            +'WHERE last_seen < DATE_SUB( NOW( ) , INTERVAL 30 DAY ) AND nfl_position.type !=3 AND nfl_position.type !=4')
+    cur.execute(query)
+
+
+    num_inactive = cur.rowcount
+    print "Players marked inactive: "+str(num_inactive)
+    db.commit()
 
 
 def update_esbids(year, week):
@@ -763,9 +819,20 @@ def update_player_draft_ranks():
             cur.execute(query)
         db.commit()
 
-    # Lastly, delete any records for players who haven't been updated, they are not ranked any longer.
+    # Delete any records for players who haven't been updated, they are not ranked any longer.
     query = 'delete from draft_player_rank where last_updated != "%s"' % (sql_now)
     cur.execute(query)
+    db.commit()
+
+    # Lastly, set the rank_order so players can be ordered by integers 1 to n, best to worst
+    query = 'select id from draft_player_rank order by rank asc'
+    cur.execute(query)
+    results = cur.fetchall()
+    cur_rank = 1
+    for row in results:
+        query = 'update draft_player_rank set rank_order = %s where id = %s' % (str(cur_rank), str(row['id']))
+        cur.execute(query)
+        cur_rank += 1
     db.commit()
 
 def update_player_injuries():
@@ -849,6 +916,7 @@ parser.add_argument('-schedule_clear', action="store_true", default=False, help=
 #parser.add_argument('-g', action="store_true", default=False, help="Update NFL game stats and recalculate fantasy stats")
 parser.add_argument('-players', action="store_true", default=False, help="Update NFL players")
 parser.add_argument('-photos', action="store_true", default=False, help="Check for photos for players that don't have one.")
+parser.add_argument('-clear_player_generic_photo', action="store", default=None, required=False, help="Specify filename of player photo. Photos matching this file's hash will be cleared so they can be re-scanned.")
 parser.add_argument('-stats_summary', action="store_true", default=False, help="Calculate and store player fantasy stats summaries")
 parser.add_argument('-standings', action="store_true", default=False, help="Calculate standings results and add to schedule table.")
 parser.add_argument('-year', action="store", default="0", required=False, help="Year")

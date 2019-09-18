@@ -15,22 +15,96 @@ class Schedule_templates extends MY_Admin_Controller{
     {
 
 
-        $this->load->helper('form');
-        if ($this->input->post('create'))
-        {
-            $data = array('name' => $this->input->post('name'),
-                'teams' => $this->input->post('teams'),
-                'divisions' => $this->input->post('divisions'),
-                'weeks' => $this->input->post('weeks'),
-                'per_week' => $this->input->post('per_week'),
-                'description' => $this->input->post('description'));
+        // $this->load->helper('form');
+        // if ($this->input->post('create'))
+        // {
+        //     $data = array('name' => $this->input->post('name'),
+        //         'teams' => $this->input->post('teams'),
+        //         'divisions' => $this->input->post('divisions'),
+        //         'weeks' => $this->input->post('weeks'),
+        //         'per_week' => $this->input->post('per_week'),
+        //         'description' => $this->input->post('description'));
 
-            $this->schedule_model->save_template($data);
-            redirect('admin/schedule_templates');
-        }
+        //     $this->schedule_model->save_template($data);
+        //     redirect('admin/schedule_templates');
+        // }
 
         $templates = $this->schedule_model->get_templates_data();
         $this->admin_view('admin/schedule/schedule_template', array('templates' => $templates));
+    }
+
+    function ajax_create_template()
+    {
+        $response = array('success' => False);
+
+        $data = array('name' => $this->input->post('name'),
+        'teams' => $this->input->post('num_teams'),
+        'divisions' => $this->input->post('num_divs'),
+        'weeks' => $this->input->post('num_reg_weeks'),
+        'per_week' => $this->input->post('num_games_per_week'),
+        'description' => $this->input->post('desc'));
+
+        $this->schedule_model->save_template($data);
+
+        $response['success'] = True;
+
+        echo json_encode($response);
+    }
+
+    function ajax_edit_template_info()
+    {
+        $response = array('success' => False);
+
+        $data = array('id' => $this->input->post('template_id'),
+            'name' => $this->input->post('name'),
+            'teams' => $this->input->post('num_teams'),
+            'divisions' => $this->input->post('num_divs'),
+            'weeks' => $this->input->post('num_weeks'),
+            'per_week' => $this->input->post('per_week'),
+            'description' => $this->input->post('desc'));
+
+        // $response['data'] = $data;
+        // echo json_encode($response);
+        // die();
+
+        $this->schedule_model->save_template($data);
+
+        $response['message'] = "Template info saved.";
+        $response['success'] = True;
+
+        echo json_encode($response);
+    }
+
+    function ajax_edit_template_data()
+    {
+        $response = array('success' => False);
+
+//        $postdata = $this->input->post('data');
+
+        $games = $this->input->post('games');
+        $template_id = $this->input->post('template_id');
+        $response['games'] = $games;
+        // $response['success'] = True;
+        // echo json_encode($response);
+        // die();
+        $data = array();
+        foreach($games as $game)
+        {   
+            $key = $game['week'].$game['game'];
+            // NICK START HERE WORKING TOWARDS SAVE_TEMPLATE_MATCHUPS in model
+            if ($game['homeaway'] == "away")
+                $data[$key]['away'] = $game['value'];
+            if ($game['homeaway'] == "home")
+                $data[$key]['home'] = $game['value'];                
+            $data[$key]['week'] = $game['week'];
+            $data[$key]['game'] = $game['game'];
+            $data[$key]['schedule_template_id'] = $template_id;
+        }
+
+        $this->schedule_model->save_template_matchups($template_id, $data);
+        $response['success'] = True;
+        $response['message'] = "Template matchups saved.";
+        echo json_encode($response);
     }
 
     function edit($id)
@@ -62,19 +136,19 @@ class Schedule_templates extends MY_Admin_Controller{
             redirect('admin/schedule_templates');
         }
 
-        if ($this->input->post('update'))
-        {
-            $data = array('id' => $id,
-                'name' => $this->input->post('name'),
-                'teams' => $this->input->post('teams'),
-                'divisions' => $this->input->post('divisions'),
-                'weeks' => $this->input->post('weeks'),
-                'per_week' => $this->input->post('per_week'),
-                'description' => $this->input->post('description'));
+        // if ($this->input->post('update'))
+        // {
+        //     $data = array('id' => $id,
+        //         'name' => $this->input->post('name'),
+        //         'teams' => $this->input->post('teams'),
+        //         'divisions' => $this->input->post('divisions'),
+        //         'weeks' => $this->input->post('weeks'),
+        //         'per_week' => $this->input->post('per_week'),
+        //         'description' => $this->input->post('description'));
 
-            $this->schedule_model->save_template($data);
-            redirect('admin/schedule_templates');
-        }
+        //     $this->schedule_model->save_template($data);
+        //     redirect('admin/schedule_templates');
+        // }
 
         $template = $this->schedule_model->get_template_data($id);
         $data = $this->schedule_model->get_template_matchups_data($id);
@@ -99,6 +173,21 @@ class Schedule_templates extends MY_Admin_Controller{
     {
         $this->schedule_model->delete_template($id);
         redirect('admin/schedule_templates');
+    }
+
+    function ajax_add_gametype()
+    {
+        $response = array('success' =>false);
+
+        $text_id = $this->input->post('text_id');
+        $title_game = $this->input->post('title_game');
+
+        $this->schedule_model->add_gametype($text_id, $title_game);
+
+        $response['success'] = True;
+
+        echo json_encode($response);
+
     }
 
     function gametypes($action = null, $id = null)
@@ -138,10 +227,11 @@ class Schedule_templates extends MY_Admin_Controller{
     function ajax_gametype_name_edit()
     {
         $response = array('success' => false);
-        $id = str_replace("type","",$this->input->post('type'));
+        $id = $this->input->post('var1');
         $value = $this->input->post('value');
 
         $this->schedule_model->set_gametype_name($id, $value);
+        $response['value'] = $value;
         $response['success'] = True;
 
         echo json_encode($response);
@@ -188,6 +278,7 @@ class Schedule_templates extends MY_Admin_Controller{
         $value = $this->input->post('value');
 
         $this->schedule_model->set_title_text($id, $value);
+        $response['value'] = $value;
         $response['success'] = True;
 
         echo json_encode($response);
@@ -201,6 +292,7 @@ class Schedule_templates extends MY_Admin_Controller{
         $value = $this->input->post('value');
 
         $this->schedule_model->set_title_display_order($id, $value);
+        $response['value'] = $value;
         $response['success'] = True;
 
         echo json_encode($response);

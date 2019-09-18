@@ -40,10 +40,10 @@ class Common_model extends CI_Model{
     function team_info($team_id)
     {
         return $this->db->select('team.team_name, owner.first_name, owner.last_name, owner.id as owner_id')
-            ->select('team.id as team_id, uacc_email as owner_email')
+            ->select('team.id as team_id, email as owner_email')
             ->from('team')
             ->join('owner','owner.id = team.owner_id')
-            ->join('user_accounts','uacc_id = owner.user_accounts_id')
+            ->join('user_accounts','user_accounts.id = owner.user_accounts_id')
             ->where('team.id',$team_id)->get()->row();
     }
 
@@ -138,11 +138,15 @@ class Common_model extends CI_Model{
             ->where('year > ',$start_year)->get()->row()->y;
         $data['db_start'] = $start_year;
         $data['db_end'] = $end_year;
-        // If never changed, look up the first year the league existed
+
+        // If never changed, look up the first year the league existed, if there is no schedule, then it must be a brand
+        // new league, so the current year is the start year
         if ($start_year == 0)
         {
-            $start_year = $this->db->select('distinct(year)')->from('schedule')->where('league_id',$this->leagueid)
-            ->order_by('year','asc')->limit(1)->get()->row()->year;
+            $sched_row = $this->db->select('distinct(year)')->from('schedule')->where('league_id',$this->leagueid)
+                ->order_by('year','asc')->limit(1)->get()->row();
+            if($sched_row)
+                $start_year = $sched_row->year;
         }
         // If never changed, it's through the current year... if it has, the def doesn't include the last changed year, so decrement 1.
         if ($end_year == 0)
@@ -181,8 +185,10 @@ class Common_model extends CI_Model{
         // If never changed, look up the first year the league existed
         if ($start_year == 0)
         {
-            $start_year = $this->db->select('distinct(year)')->from('schedule')->where('league_id',$this->leagueid)
-            ->order_by('year','asc')->limit(1)->get()->row()->year;
+            $sched_row = $this->db->select('distinct(year)')->from('schedule')->where('league_id',$this->leagueid)
+            ->order_by('year','asc')->limit(1)->get()->row();
+            if($sched_row)
+                $start_year = $sched_row->year;
         }
         // If never changed, it's through the current year... if it has, the def doesn't include the last changed year, so decrement 1.
         if ($end_year == 0)
@@ -233,23 +239,33 @@ class Common_model extends CI_Model{
         return site_url('joinleague/invite/'.$mask);
     }
 
-    function get_user_messages()
+    function get_user_notifications()
     {
         // Actual messages get set in the security_model with session variables.
-        if (is_array($this->session->userdata('user_messages')))
-            return $this->session->userdata('user_messages');
+        if (is_array($this->session->userdata('user_notifications')))
+            return $this->session->userdata('user_notifications');
         return array();
     }
 
-    function clear_user_message($text="")
+    function clear_user_notification($text="")
     {
-        $messages = $this->session->userdata('user_messages');
+        $messages = $this->session->userdata('user_notifications');
         foreach($messages as $key => $m)
         {
             if( strpos($m['id'], $text) !== false )
                 unset($messages[$key]);
         }
-        $this->session->set_userdata('user_messages',$messages);
+        $this->session->set_userdata('user_notifications',$messages);
+    }
+
+    function sit_player($playerid, $teamid, $week, $year)
+    {
+        $this->common_noauth_model->sit_player($playerid, $teamid, $week, $year, $this->leagueid);
+    }
+
+    function start_player($playerid, $posid, $teamid, $week, $year, $weektype)
+    {
+        $this->common_noauth_model->start_player($playerid, $posid, $teamid, $week, $year, $weektype, $this->leagueid);
     }
 
     function drop_player($player_id, $teamid)
@@ -329,6 +345,18 @@ class Common_model extends CI_Model{
         }
 
         return $data;
+    }
+
+    function force_league_admin()
+    {
+        if (!$this->session->userdata('is_league_admin'))
+            redirect('/');
+    }
+
+    function force_site_admin()
+    {
+        if (!$this->session->userdata('is_site_admin'))
+            redirect('/');
     }
 
 
